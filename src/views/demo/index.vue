@@ -1,53 +1,125 @@
-<script setup name="Demo">
-import { reactive } from "vue";
 
-const contentList = reactive([
-  "✔ ⚡ Vue3 + Vite4",
-  "✔ ✨ Vant4 组件库",
-  "✔ 🌀 Tailwindcss 原子类框架",
-  "✔ 🍍 Pinia 状态管理",
-  "✔ 🌓 支持深色模式",
-  "✔ Vue-router 4",
-  "✔ 支持 SVG 图标自动注册组件",
-  "✔ vw 视口适配",
-  "✔ Axios 封装",
-  "✔ 打包资源 gzip 压缩",
-  "✔ 开发环境支持 Mock 数据",
-  "✔ ESLint",
-  "✔ 首屏加载动画",
-  "✔ 开发环境调试面板"
-]);
+<script>
+import { HttpStatusCode } from "axios";
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { http } from "@/utils/http";
+
+export default {
+  setup() {
+    const router = useRouter();
+    const list = ref([]);
+    const totalMap = ref({});
+    const loading = ref(false);
+    const finished = ref(false);
+    const search = ref("");
+    const page = ref(1);
+    const pageSize = 10;
+
+    onMounted(() => {
+      fetchRecords();
+    });
+
+    const loadMore = () => {
+      page.value += 1;
+      fetchRecords();
+    };
+
+    const fetchRecords = () => {
+      http
+        .request({
+          url: "https://raw.githubusercontent.com/magic3584/API/master/vant.json",
+          method: "get"
+        })
+        .then(response => {
+          console.log(response.data.data);
+          var newList = response.data.data;
+
+          console.log("newList length", newList.length);
+
+          if (page.value == 1) {
+            list.value = newList;
+          } else {
+            list.value = list.value.concat(newList);
+          }
+
+          console.log("list length:", list.value.length);
+          // 加载状态结束
+          loading.value = false;
+
+          if (newList.length == 0) {
+            finished.value = true;
+          }
+        })
+        .catch(e => {
+          // 加载状态结束
+          loading.value = false;
+          finished.value = true;
+        });
+    };
+
+    const scrollToTop = () => {
+      var element = document.getElementById("bg");
+      console.log("element:", element);
+      document.getElementById("bg").scrollTop = 0;
+    };
+
+    return {
+      list,
+      totalMap,
+      loading,
+      finished,
+      search,
+      scrollToTop,
+      loadMore,
+      fetchRecords
+    };
+  }
+};
 </script>
 
-<template>
-  <div class="demo-content px-[12px]">
-    <img
-      class="block w-[120px] mx-auto mb-[20px] pt-[30px]"
-      alt="Vue logo"
-      src="~@/assets/logo_melomini.png"
-    />
-    <div class="pl-[12px] border-l-[3px] border-[color:#41b883]">
-      <a
-        class="flex items-center"
-        href="https://github.com/yulimchen/vue3-h5-template"
-        target="_blank"
-      >
-        <svg-icon class="text-[20px] mr-[8px]" name="github" />
-        <h3 class="font-bold text-[18px] my-[4px]">Vue3-h5-template</h3>
-        <svg-icon class="text-[12px] ml-[5px]" name="link" />
-      </a>
-    </div>
-    <div
-      class="text-[14px] py-[2px] px-[10px] rounded-[4px] bg-[var(--color-block-background)] mt-[14px]"
-    >
-      <p class="my-[14px] leading-[24px]">
-        🌱 基于 Vue3 全家桶、TypeScript、Vite 构建工具，开箱即用的 H5
-        移动端项目基础模板
-      </p>
-    </div>
 
-    <div class="demo-main">
-      <van-cell v-for="(item, idx) in contentList" :key="idx" :title="item" />
+<template>
+
+  <div
+    id='bg'
+    style="width: 100vw;height:100vh;padding: 15px;"
+    @keydown.enter="fetchRecords"
+  >
+
+    <div v-show="list.length!=0">
+      <!-- list -->
+      <van-list
+        v-model:loading="loading"
+        :finished="finished"
+        finished-text="没有了"
+        @load="loadMore"
+      >
+        <van-cell
+          v-for="item in list"
+          :key="item"
+          class="cell"
+        >
+          <div style="color:blue">{{ item.index }}</div>
+
+        </van-cell>
+      </van-list>
     </div>
   </div>
 </template>
+
+
+
+<style scoped>
+.cell {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  padding: 0;
+  margin-bottom: 15px;
+  border: 1px solid #b6cde7;
+  background-color: red;
+  height: 100px;
+}
+</style>

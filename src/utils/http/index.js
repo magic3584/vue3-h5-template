@@ -48,19 +48,7 @@ class Http {
     Http.axiosInstance.interceptors.response.use(
       response => {
         NProgress.done();
-        // 与后端协定的返回字段
-        const { code, message, result } = response.data;
-        // 判断请求是否成功 （code 200 请求成功）
-        const isSuccess =
-          result && Reflect.has(response.data, "code") && code === 200;
-        if (isSuccess) {
-          return result;
-        } else {
-          // 处理请求错误
-          // showFailToast(message);
-          console.log(message);
-          return Promise.reject(response.data);
-        }
+        return response;
       },
       error => {
         NProgress.done();
